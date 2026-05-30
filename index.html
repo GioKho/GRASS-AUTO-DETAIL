@@ -139,6 +139,13 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(255,255,255,
 .form-msg{text-align:center;font-size:.84rem;padding:8px 0;min-height:24px}
 .form-msg.ok{color:var(--grass)}.form-msg.err{color:#dc2626}
 
+/* PRODUCT DETAIL MODAL */
+.pdm-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.pdm-name{font-size:1.05rem;font-weight:800;line-height:1.4;margin-bottom:8px}
+.pdm-desc{font-size:.88rem;color:var(--muted);line-height:1.6;margin-bottom:14px}
+.pdm-img{width:100%;max-height:260px;object-fit:contain;background:var(--bg-soft);border-radius:10px;display:block;margin-bottom:14px}
+.pdm-placeholder{width:100%;height:200px;border-radius:10px;background:var(--bg-soft);display:flex;align-items:center;justify-content:center;font-size:3.5rem;margin-bottom:14px;color:var(--border)}
+
 /* FOOTER */
 footer{background:var(--bg-soft);border-top:1px solid var(--border);padding:40px 5%}
 .footer-inner{max-width:800px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:2rem;align-items:start}
@@ -255,7 +262,7 @@ const T = {
     footerDesc:'B2B ავტოქიმიის კატალოგი. Detail და GraSS ბრენდების ოფიციალური დისტრიბუტორი ბათუმის რეგიონში.',
     contactH:'კონტაქტი', addr:'ჭავჭავაძის ქ. 64, ბათუმი', backLink:'← BBS',
     copy:'© 2026 Grass Batumi · BBS',
-    toCart:'კალათაში', inCart:'✓ კალათაშია',
+    toCart:'კალათაში', inCart:'✓ კალათაშია', close:'დახურვა',
     cartTitle:'კალათა', cartEmpty:'კალათა ცარიელია',
     cartTotal:'სულ', checkoutBtn:'შეკვეთის გაფორმება',
     checkoutTitle:'შეკვეთის გაფორმება',
@@ -274,7 +281,7 @@ const T = {
     footerDesc:'Каталог B2B автохимии. Официальный дистрибьютор брендов Detail и GraSS в регионе Батуми.',
     contactH:'Контакты', addr:'ул. Чавчавадзе 64, Батуми', backLink:'← BBS',
     copy:'© 2026 Grass Batumi · BBS',
-    toCart:'В корзину', inCart:'✓ В корзине',
+    toCart:'В корзину', inCart:'✓ В корзине', close:'Закрыть',
     cartTitle:'Корзина', cartEmpty:'Корзина пуста',
     cartTotal:'Итого', checkoutBtn:'Оформить заказ',
     checkoutTitle:'Оформление заказа',
@@ -292,6 +299,7 @@ let activeBrand = 'all';
 let activeCat = 'all';
 
 function setLang(l){
+  closeProduct();
   lang = l;
   document.getElementById('btn-ka').classList.toggle('active', l==='ka');
   document.getElementById('btn-ru').classList.toggle('active', l==='ru');
@@ -371,7 +379,7 @@ function render(){
     const imgHtml = imgFile
       ? `<img class="card-img" src="img/${imgFile}" alt="${p.art}" loading="lazy" onerror="this.style.display='none'">`
       : `<div class="card-img-placeholder">🧴</div>`;
-    return `<div class="card">
+    return `<div class="card" onclick="openProduct('${p.art}')">
       ${imgHtml}
       <div class="card-top">
         <span class="brand-badge ${isG?'grass':'detail'}">${p.brand}</span>
@@ -392,12 +400,51 @@ function render(){
           <span class="price-tag ${isG?'grass':''}">${p.price} ₾</span>
         </div>
       </div>
-      <button class="cart-btn ${cartHas(p.art)?'in-cart':(isG?'add-grass':'add')}" id="cb-${p.art}" onclick="cartAction('${p.art}')">
+      <button class="cart-btn ${cartHas(p.art)?'in-cart':(isG?'add-grass':'add')}" id="cb-${p.art}" onclick="event.stopPropagation();cartAction('${p.art}')">
         ${cartHas(p.art)?T[lang].inCart:T[lang].toCart}
       </button>
     </div>`;
   }).join('');
 }
+
+// ─── PRODUCT DETAIL MODAL ───
+function openProduct(art){
+  const p = PRODUCTS.find(x=>x.art===art);
+  if(!p) return;
+  const isG = p.brand==='GraSS';
+  const name = lang==='ka'?p.ge:p.ru;
+  const desc = lang==='ka'?p.dge:p.dru;
+  const catLabel = CATS[p.cat]?CATS[p.cat][lang]:'';
+  const imgFile = IMG[p.art];
+
+  const imgEl = document.getElementById('pdm-img');
+  const phEl  = document.getElementById('pdm-placeholder');
+  if(imgFile){ imgEl.src=`img/${imgFile}`; imgEl.style.display='block'; phEl.style.display='none'; }
+  else { imgEl.style.display='none'; phEl.style.display='flex'; }
+
+  document.getElementById('pdm-badge').textContent = p.brand;
+  document.getElementById('pdm-badge').className = 'brand-badge '+(isG?'grass':'detail');
+  document.getElementById('pdm-cat').textContent = catLabel;
+  document.getElementById('pdm-name').textContent = name;
+  document.getElementById('pdm-desc').textContent = desc;
+  document.getElementById('pdm-art-lbl').textContent = T[lang].article;
+  document.getElementById('pdm-art-val').textContent = p.art;
+  document.getElementById('pdm-pkg-lbl').textContent = T[lang].packaging;
+  document.getElementById('pdm-pkg-val').textContent = p.pkg;
+  document.getElementById('pdm-price').textContent = `${p.price} ₾`;
+  document.getElementById('pdm-price').className = 'price-tag'+(isG?' grass':'');
+  const btn = document.getElementById('pdm-cart-btn');
+  btn.textContent = cartHas(art)?T[lang].inCart:T[lang].toCart;
+  btn.className = 'cart-btn '+(cartHas(art)?'in-cart':(isG?'add-grass':'add'));
+  btn.onclick = e=>{ e.stopPropagation(); cartAction(art); closeProduct(); };
+  document.getElementById('pdm-close').textContent = T[lang].close;
+  document.getElementById('pdm-bg').classList.add('open');
+}
+function closeProduct(){
+  const el = document.getElementById('pdm-bg');
+  if(el) el.classList.remove('open');
+}
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeProduct(); });
 
 // ─── EMAILJS INIT ───
 (function(){
@@ -596,6 +643,37 @@ renderCartBody();
       <button class="btn-cancel" id="btn-cancel-modal" onclick="closeCheckout()">Отмена</button>
       <button class="btn-submit" id="btn-submit-modal" onclick="submitOrder()">Отправить</button>
     </div>
+  </div>
+</div>
+
+<!-- PRODUCT DETAIL MODAL -->
+<div class="modal-bg" id="pdm-bg" onclick="if(event.target===this)closeProduct()">
+  <div class="modal-box" style="max-width:500px">
+    <div class="pdm-head">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span id="pdm-badge" class="brand-badge detail"></span>
+        <span id="pdm-cat" class="cat-label"></span>
+      </div>
+      <button class="cart-close" id="pdm-close" onclick="closeProduct()">✕</button>
+    </div>
+    <img id="pdm-img" class="pdm-img" alt="" style="display:none">
+    <div id="pdm-placeholder" class="pdm-placeholder" style="display:none">🧴</div>
+    <div id="pdm-name" class="pdm-name"></div>
+    <div id="pdm-desc" class="pdm-desc"></div>
+    <div class="card-meta" style="margin-bottom:16px">
+      <div class="meta-row">
+        <span id="pdm-art-lbl" class="meta-label"></span>
+        <span id="pdm-art-val" class="meta-val"></span>
+      </div>
+      <div class="meta-row">
+        <span id="pdm-pkg-lbl" class="meta-label"></span>
+        <span id="pdm-pkg-val" class="meta-val" style="text-align:right;max-width:65%"></span>
+      </div>
+      <div class="meta-row" style="margin-top:.4rem">
+        <span id="pdm-price" class="price-tag"></span>
+      </div>
+    </div>
+    <button id="pdm-cart-btn" class="cart-btn add"></button>
   </div>
 </div>
 
