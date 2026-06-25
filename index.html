@@ -705,5 +705,17 @@ renderCartBody();
 @media(max-width:600px){.wa-float{width:50px;height:50px;right:14px;bottom:14px}.wa-float svg{width:28px;height:28px}}
 </style>
 
+<script>
+/* AutoDetail deep-link: фильтр/корзина из лендинга /v2.html. Аддитивно — без URL-параметров поведение не меняется. */
+(function(){try{
+  var u=new URLSearchParams(location.search||'');
+  var did=false;
+  var b=u.get('brand'); if(b==='Detail'||b==='GraSS'){ if(typeof setBrand==='function'){setBrand(b);did=true;} }
+  var c=u.get('cat'); if(c&&/^[a-z_]{2,20}$/.test(c)){ if(typeof setCat==='function'){setCat(c);did=true;} }
+  var q=u.get('q'); if(q){ var s=document.getElementById('search'); if(s){ s.value=q; if(typeof render==='function'){render();} did=true; } }
+  if(u.get('cart')==='1'&&typeof openCart==='function'){ openCart(); }
+  if(did){ var fw=document.querySelector('.filters-wrap'); if(fw){ try{fw.scrollIntoView({block:'start'});}catch(e){} } }
+}catch(e){}})();
+</script>
 </body>
 </html>
